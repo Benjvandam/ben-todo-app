@@ -1,0 +1,137 @@
+<div class="min-h-screen bg-gray-100 p-6">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Your TO DO Lists</h1>
+  </div>
+
+  <div class="flex gap-6 overflow-x-auto">
+    <% @lists.order(id: :asc).each do |list| %>
+      <div class="bg-gray-200 rounded-lg p-4 w-72 shadow-md flex-shrink-0 relative" id="list_<%= list.id %>">
+        <button onclick="deleteList(<%= list.id %>)" class="absolute top-2 right-2 text-red-500 hover:text-red-700 text-lg font-bold">
+          ×
+        </button>
+        
+        <h2 class="text-lg font-bold text-gray-800 mb-4 cursor-pointer hover:bg-gray-300 px-2 py-1 rounded" 
+            onclick="editListName(this, <%= list.id %>)" 
+            data-list-id="<%= list.id %>">
+          <%= list.name %>
+        </h2>
+        
+        <div class="mb-4 space-y-2">
+          <% if list.tasks.any? %>
+            <% list.tasks.each do |task| %>
+              <div class="bg-white border border-gray-300 rounded p-3 text-sm text-gray-600 flex items-center justify-between">
+                <span class="text-gray-800 flex-1"><%= task.name %></span>
+                <div class="flex items-center gap-2">
+                  <%= link_to "View Details", task_path(task), class: "text-blue-600 hover:text-blue-800 text-xs" %>
+                  <button onclick="deleteTask(<%= task.id %>)" class="text-red-500 hover:text-red-700 text-sm font-bold ml-1">
+                    ×
+                  </button>
+                </div>
+              </div>
+            <% end %>
+          <% else %>
+            <p class="text-gray-500 text-sm">No tasks yet.</p>
+          <% end %>
+        </div>
+
+        <div class="flex gap-3">
+          <%= form_with(model: [list, list.tasks.build], url: list_tasks_path(list), data: { turbo: false }) do |form| %>
+            <div class="flex gap-3 w-full">
+              <%= form.text_field :name, placeholder: "TO DO item", class: "flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" %>
+              <%= form.hidden_field :status, value: "open" %>
+              <%= form.button "+", class: "bg-gray-600 hover:bg-gray-700 text-white border-none rounded px-4 py-2 text-lg font-bold cursor-pointer transition-colors" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+    
+    <div class="bg-amber-50 border border-gray-300 rounded-lg p-4 w-72 shadow-md flex-shrink-0 flex items-center justify-center">
+      <%= form_with(model: @new_list, url: lists_path, data: { turbo: false }) do |form| %>
+        <%= form.hidden_field :name, value: "New List" %>
+        <%= form.button "Add List", class: "bg-amber-50 hover:bg-amber-100 border border-gray-300 rounded px-5 py-2 text-gray-700 shadow-sm transition-colors" %>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<script>
+function editListName(element, listId) {
+  const currentName = element.textContent.trim();
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = currentName;
+  input.className = 'text-lg font-bold text-gray-800 mb-4 px-2 py-1 rounded border border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500';
+  
+  input.addEventListener('blur', function() {
+    saveListName(listId, this.value);
+  });
+  
+  input.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      this.blur();
+    }
+  });
+  
+  element.parentNode.replaceChild(input, element);
+  input.focus();
+  input.select();
+}
+
+function saveListName(listId, newName) {
+  fetch(`/lists/${listId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+    },
+    body: JSON.stringify({
+      list: { name: newName }
+    })
+  })
+  .then(response => {
+    if (response.ok) {
+      location.reload();
+    }
+  });
+}
+
+function deleteList(listId) {
+  if (confirm('Are you sure you want to delete this list? This will also delete all tasks in the list.')) {
+    fetch(`/lists/${listId}`, {
+      method: 'DELETE',
+      headers: {
+        'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+      }
+    })
+    .then(response => {
+      console.log('Delete response:', response.status);
+      if (response.ok) {
+        location.reload();
+      } else {
+        alert('Failed to delete list');
+      }
+    })
+    .catch(error => {
+      console.error('Delete error:', error);
+      alert('Error deleting list');
+    });
+  }
+}
+
+function deleteTask(taskId) {
+  if (confirm('Are you sure you want to delete this task?')) {
+    fetch(`/tasks/${taskId}`, {
+      method: 'DELETE',
+      headers: {
+        'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+      }
+    })
+    .then(response => {
+      if (response.ok) {
+        location.reload();
+      }
+    });
+  }
+}
+</script>

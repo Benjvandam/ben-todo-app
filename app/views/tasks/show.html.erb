@@ -1,0 +1,141 @@
+<div class="min-h-screen bg-gray-100 p-6">
+  <!-- Header with Back Button -->
+  <div class="mb-6">
+    <div class="mb-4">
+      <%= link_to root_path, class: "bg-amber-50 hover:bg-amber-100 border border-gray-300 rounded px-4 py-2 text-gray-700 shadow-sm transition-colors inline-block" do %>
+        ← Back to Lists
+      <% end %>
+    </div>
+    <h1 class="text-2xl font-bold text-gray-800">Item detail</h1>
+  </div>
+
+  <!-- Main Content Card -->
+  <div class="bg-gray-200 rounded-lg p-6 shadow-md max-w-2xl mx-auto">
+    <!-- Task Name (To Do Item) -->
+    <div class="mb-6">
+      <label class="block text-gray-800 font-bold mb-2">To Do Item</label>
+      <input id="task-name" type="text" value="<%= @task.name %>" class="bg-white border border-gray-300 rounded p-2 w-full text-gray-800">
+    </div>
+
+    <!-- Description -->
+    <div class="mb-6">
+      <label class="block text-gray-800 font-bold mb-2">Description</label>
+      <textarea id="task-description" rows="4" class="bg-amber-50 border border-gray-300 rounded p-2 w-full text-gray-800" placeholder="Detailed description of the task..."><%= @task.description %></textarea>
+    </div>
+
+    <!-- Add Comment Section -->
+    <div class="mb-6">
+      <label class="block text-gray-800 font-bold mb-2">Add Comment</label>
+      <%= form_with(url: task_comments_path(@task), data: { turbo: false }) do |form| %>
+        <%= form.text_area :content, name: "comment[content]", rows: 3, class: "bg-amber-50 border border-gray-300 rounded p-2 w-full text-gray-800", placeholder: "Type comment here" %>
+        <div class="flex justify-center mt-4">
+          <%= form.submit "Add Comment", class: "bg-amber-50 hover:bg-amber-100 border border-gray-300 rounded px-5 py-2 text-gray-700 shadow-sm transition-colors cursor-pointer" %>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Existing Comments -->
+    <div class="mb-6">
+      <% if @task.comments.order(created_at: :desc).any? %>
+        <div class="space-y-3">
+          <% @task.comments.order(created_at: :desc).each do |comment| %>
+            <div class="bg-white p-3 rounded shadow-sm">
+              <p class="text-gray-500 text-sm mb-1">
+                <%= comment.created_at&.strftime("%a %d/%m/%Y - %H:%M") || "Unknown date" %>
+              </p>
+              <p class="text-gray-700 font-semibold">Comment by user <%= comment.id %></p>
+              <p class="text-gray-800 mt-1"><%= comment.content %></p>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-gray-600 text-center">No comments yet.</p>
+      <% end %>
+    </div>
+
+    <!-- Mark as done Button -->
+    <div class="flex justify-center">
+      <%= form_with(model: @task, url: task_path(@task), method: :patch, data: { turbo: false }) do |form| %>
+        <%= form.hidden_field :status, value: "closed" %>
+        <%= form.button "Mark as done", class: "bg-amber-50 hover:bg-amber-100 border border-gray-300 rounded px-5 py-2 text-gray-700 shadow-sm transition-colors cursor-pointer" %>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<script>
+let updateTimeout;
+let lastDescription = '<%= @task.description %>';
+let nameUpdateTimeout;
+let lastName = '<%= @task.name %>';
+
+// Task name update
+document.getElementById('task-name').addEventListener('blur', function() {
+  const name = this.value;
+  
+  if (name !== lastName) {
+    clearTimeout(nameUpdateTimeout);
+    
+    nameUpdateTimeout = setTimeout(() => {
+      const taskId = <%= @task.id %>;
+      
+      fetch(`/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+          task: { name: name }
+        })
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log('Name updated successfully');
+          lastName = name;
+        } else {
+          console.error('Failed to update name');
+        }
+      })
+      .catch(error => {
+        console.error('Error updating name:', error);
+      });
+    }, 300);
+  }
+});
+
+// Task description update
+document.getElementById('task-description').addEventListener('blur', function() {
+  const description = this.value;
+  
+  if (description !== lastDescription) {
+    clearTimeout(updateTimeout);
+    
+    updateTimeout = setTimeout(() => {
+      const taskId = <%= @task.id %>;
+      
+      fetch(`/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+          task: { description: description }
+        })
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log('Description updated successfully');
+          lastDescription = description;
+        } else {
+          console.error('Failed to update description');
+        }
+      })
+      .catch(error => {
+        console.error('Error updating description:', error);
+      });
+    }, 300);
+  }
+});
+</script>
