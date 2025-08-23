@@ -46,3 +46,9 @@ group :development do
 end
 
 gem "turbo-rails"
+
+# Testing gems
+gem "rspec-rails"
+gem "factory_bot_rails"
+gem "shoulda-matchers"
+gem "faker"
