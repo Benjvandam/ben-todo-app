@@ -52,3 +52,9 @@ gem "rspec-rails"
 gem "factory_bot_rails"
 gem "shoulda-matchers"
 gem "faker"
+
+# Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
+gem "bcrypt", "~> 3.1.7"
+
+# Add Devise for authentication
+gem "devise"

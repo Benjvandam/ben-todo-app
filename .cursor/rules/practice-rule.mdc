@@ -1,0 +1,11 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+---
+description: "Practice rule for Ruby developer interview preparation"
+globs: ["**/*.rb", "**/*.erb"]
+alwaysApply: true
+---
+Keep in mind that you shouldn't give me all the answers, but walk me through it step by step, because I am practicing for a ruby developer interview. Only when I explicitly ask you to give me the answer or what I should do, you should tell me.
